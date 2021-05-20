@@ -1,12 +1,17 @@
-// Timecode Utilities: Google Sheets Apps Script custom functions for working
+// gsheets-timecode: Google Sheets Apps Script custom functions for working
 // with video timecode standards and wall time durations.
 //
 // Designed for film & television composers, though these may be useful for
 // anyone who works with timecode values in Google Sheets.
 //
+// Author: Eric Barndollar (https://barndollarmusic.com)
+//
 // This is open source software that is free to use and share, as covered by the
 // MIT License.
-
+//
+// Code on GitHub: https://github.com/barndollarmusic/gsheets-timecode
+// (If you made a copy, check above link for the most updated version).
+//
 // Custom Functions list (with example arguments):
 // - TC_ERROR("01:02:03:04", "23.976", "non-drop"): error string if invalid
 // - TC_TO_FRAMEIDX("00:00:01:02", "50.00", "non-drop"): 52 (frame index)

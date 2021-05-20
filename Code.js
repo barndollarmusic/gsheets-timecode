@@ -6,11 +6,14 @@
 //
 // Author: Eric Barndollar (https://barndollarmusic.com)
 //
-// This is open source software that is free to use and share, as covered by the
-// MIT License.
+// The easiest way to use yourself is to use File > Make a copy on this Sheet:
+// https://docs.google.com/spreadsheets/d/1xPi0lxi4-4NmZmNoTXXoCNa0FGIAhwi2QCPjTABJCw4/edit?usp=sharing
 //
 // Code on GitHub: https://github.com/barndollarmusic/gsheets-timecode
 // (If you made a copy, check above link for the most updated version).
+//
+// This is open source software that is free to use and share, as covered by the
+// MIT License.
 //
 // Custom Functions list (with example arguments):
 // - TC_ERROR("01:02:03:04", "23.976", "non-drop"): error string if invalid

@@ -1,0 +1,23 @@
+{
+  "name": "gsheets-timecode",
+  "version": "1.0.0",
+  "description": "Google Sheets custom functions for working with video timecode standards and wall time durations",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/barndollarmusic/gsheets-timecode.git"
+  },
+  "author": "Eric Barndollar",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/barndollarmusic/gsheets-timecode/issues"
+  },
+  "homepage": "https://github.com/barndollarmusic/gsheets-timecode#readme",
+  "devDependencies": {
+    "@google/clasp": "^2.3.2",
+    "jest": "^26.6.3"
+  }
+}

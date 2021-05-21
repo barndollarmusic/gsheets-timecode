@@ -1,4 +1,6 @@
 # gsheets-timecode
+[![Build Status](https://travis-ci.com/barndollarmusic/gsheets-timecode.svg?branch=main)](https://travis-ci.com/barndollarmusic/gsheets-timecode)
+
 Google Sheets custom functions for working with video timecode standards and wall time durations.
 
 ![Preview of spreadsheet using timecode functions](preview.png)

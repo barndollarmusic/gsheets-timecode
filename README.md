@@ -53,6 +53,20 @@ non-drop,drop
 ```
 - Yields `"1h 02m 45s"` (a human-readable duration string).
 
+```JavaScript
+=WALL_SECS_TO_TC_LEFT(1.041, "50.00", "non-drop")
+```
+- Yields `"00:00:01:02"`, the timecode of the closest frame that is exactly at or
+before (*i.e.* to the left of) the given `wallSecs` value of `1.041` (true seconds of
+wall time measured from `00:00:00:00`).
+
+```JavaScript
+=WALL_SECS_TO_TC_RIGHT(1.041, "50.00", "non-drop")
+```
+- Yields `"00:00:01:03"`, the timecode of the closest frame that is exactly at or
+after (*i.e.* to the right of) the given `wallSecs` value of `1.041` (true seconds of
+wall time measured from `00:00:00:00`).
+
 ## Other functions (more advanced)
 ```JavaScript
 =TC_ERROR("01:02:03:04", "23.976", "non-drop")
@@ -67,9 +81,28 @@ index 0). Dropped frames are not given index values (so in 29.97 drop, `00:00:59
 `1799` and `00:01:00:02` has index `1800`).
 
 ```JavaScript
+=FRAMEIDX_TO_TC(52, "50.00", "non-drop")
+```
+- Yields `"00:00:01:02"`, the timecode of the given frame index.
+
+```JavaScript
 =FRAMEIDX_TO_WALL_SECS(52, "50.00", "non-drop")
 ```
 - Yields `1.04` secs (true seconds of wall time measured from `00:00:00:00`).
+
+```JavaScript
+=WALL_SECS_TO_FRAMEIDX_LEFT(1.041, "50.00", "non-drop")
+```
+- Yields `52`, the frame index of the closest frame that is exactly at or
+before (*i.e.* to the left of) the given `wallSecs` value of `1.041` (true seconds of
+wall time measured from `00:00:00:00`).
+
+```JavaScript
+=WALL_SECS_TO_FRAMEIDX_LEFT(1.041, "50.00", "non-drop")
+```
+- Yields `53`, the frame index of the closest frame that is exactly at or
+after (*i.e.* to the right of) the given `wallSecs` value of `1.041` (true seconds of
+wall time measured from `00:00:00:00`).
 
 # Contributing Code
 Please add tests for any changes to [Code.test.js](Code.test.js), and run all tests on the

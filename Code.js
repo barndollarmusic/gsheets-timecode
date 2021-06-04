@@ -533,7 +533,7 @@ function WALL_SECS_TO_TC_RIGHT(wallSecs, frameRate, dropType = 'non-drop') {
  * Returns timecode string for given frame index.
  * 
  * Note that negative frameIdx values are NOT supported.
-* @param {number} frameIdx The 0-based frame index.
+ * @param {number} frameIdx The 0-based frame index.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
  * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).

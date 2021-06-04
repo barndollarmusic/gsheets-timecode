@@ -442,3 +442,397 @@ describe('WALL_SECS_TO_DURSTR', () => {
     expect(Code.WALL_SECS_TO_DURSTR(-359999.98333333)).toBe('(-) 100h 00m 00s');
   });
 });
+
+describe('WALL_SECS_TO_FRAMEIDX_LEFT', () => {
+  it('rejects invalid wallSecs and timecode standards', () => {
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_LEFT(Number.NEGATIVE_INFINITY, '25.00', 'non-drop'))
+        .toThrow(/wallSecs must be a finite number/);
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_LEFT(Number.NaN, '25.00', 'non-drop'))
+        .toThrow(/wallSecs must be a finite number/);
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_LEFT(Number.POSITIVE_INFINITY, '25.00', 'non-drop'))
+        .toThrow(/wallSecs must be a finite number/);
+
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_LEFT(52, '12.00', 'non-drop'))
+        .toThrow(/Unsupported frame rate: "12.00"/);
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_LEFT(52, '25.000', 'nondrop'))
+        .toThrow(/dropType value must be "non-drop" or "drop"/);
+  });
+
+  it('converts zero and positive wallSecs correctly', () => {
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(0, '23.976', 'non-drop')).toBe(0);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(0, '24.00', 'non-drop')).toBe(0);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(0, '50.00', 'non-drop')).toBe(0);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(1.03999999, '50.00', 'non-drop')).toBe(51);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(1.04, '50.00', 'non-drop')).toBe(52);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(1.04000001, '50.00', 'non-drop')).toBe(52);
+    
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(60.02663333, '29.97', 'drop')).toBe(1798);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(60.02663334, '29.97', 'drop')).toBe(1799);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(60.06, '29.97', 'drop')).toBe(1800);
+
+    // 44:33:22:11 => 160,402 timecode seconds plus 11 frames:
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.86079166, '23.976', 'non-drop')).toBe(3849658);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.86079166, '23.98', 'non-drop')).toBe(3849658);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.86079167, '23.976', 'non-drop')).toBe(3849659);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.86079167, '23.98', 'non-drop')).toBe(3849659);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.45833333, '24.000', 'non-drop')).toBe(3849658);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.45833333, '24.00', 'non-drop')).toBe(3849658);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.45833334, '24.000', 'non-drop')).toBe(3849659);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.45833334, '24.00', 'non-drop')).toBe(3849659);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.43999999, '25.000', 'non-drop')).toBe(4010060);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.43999999, '25.00', 'non-drop')).toBe(4010060);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.44, '25.000', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.44, '25.00', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.44000001, '25.000', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.44000001, '25.00', 'non-drop')).toBe(4010061);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.76903333, '29.970', 'non-drop')).toBe(4812070);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.76903333, '29.97', 'non-drop')).toBe(4812070);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.76903334, '29.970', 'non-drop')).toBe(4812071);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.76903334, '29.97', 'non-drop')).toBe(4812071);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.36666666, '30.000', 'non-drop')).toBe(4812070);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.36666666, '30.00', 'non-drop')).toBe(4812070);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.36666667, '30.000', 'non-drop')).toBe(4812071);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.36666667, '30.00', 'non-drop')).toBe(4812071);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.63139583, '47.952', 'non-drop')).toBe(7699306);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.63139583, '47.95', 'non-drop')).toBe(7699306);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.63139584, '47.952', 'non-drop')).toBe(7699307);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.63139584, '47.95', 'non-drop')).toBe(7699307);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22916666, '48.000', 'non-drop')).toBe(7699306);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22916666, '48.00', 'non-drop')).toBe(7699306);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22916667, '48.000', 'non-drop')).toBe(7699307);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22916667, '48.00', 'non-drop')).toBe(7699307);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.21999999, '50.000', 'non-drop')).toBe(8020110);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.21999999, '50.00', 'non-drop')).toBe(8020110);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22, '50.000', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22, '50.00', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22000001, '50.000', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.22000001, '50.00', 'non-drop')).toBe(8020111);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.58551666, '59.940', 'non-drop')).toBe(9624130);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.58551666, '59.94', 'non-drop')).toBe(9624130);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.58551667, '59.940', 'non-drop')).toBe(9624131);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160562.58551667, '59.94', 'non-drop')).toBe(9624131);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.18333333, '60.000', 'non-drop')).toBe(9624130);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.18333333, '60.00', 'non-drop')).toBe(9624130);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.18333334, '60.000', 'non-drop')).toBe(9624131);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.18333334, '60.00', 'non-drop')).toBe(9624131);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.20863333, '29.970', 'drop')).toBe(4807258);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.20863333, '29.97', 'drop')).toBe(4807258);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.20863334, '29.970', 'drop')).toBe(4807259);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.20863334, '29.97', 'drop')).toBe(4807259);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.02511666, '59.940', 'drop')).toBe(9614506);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.02511666, '59.94', 'drop')).toBe(9614506);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.02511667, '59.940', 'drop')).toBe(9614507);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(160402.02511667, '59.94', 'drop')).toBe(9614507);
+  });
+
+  it('converts negative wallSecs correctly', () => {
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(-1.03999999, '50.00', 'non-drop')).toBe(-52);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(-1.04, '50.00', 'non-drop')).toBe(-52);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(-1.04000001, '50.00', 'non-drop')).toBe(-53);
+    
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(-60.02663333, '29.97', 'drop')).toBe(-1799);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_LEFT(-60.02663334, '29.97', 'drop')).toBe(-1800);
+  });
+});
+
+describe('WALL_SECS_TO_FRAMEIDX_RIGHT', () => {
+  it('rejects invalid wallSecs and timecode standards', () => {
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_RIGHT(Number.NEGATIVE_INFINITY, '25.00', 'non-drop'))
+        .toThrow(/wallSecs must be a finite number/);
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_RIGHT(Number.NaN, '25.00', 'non-drop'))
+        .toThrow(/wallSecs must be a finite number/);
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_RIGHT(Number.POSITIVE_INFINITY, '25.00', 'non-drop'))
+        .toThrow(/wallSecs must be a finite number/);
+
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_RIGHT(52, '12.00', 'non-drop'))
+        .toThrow(/Unsupported frame rate: "12.00"/);
+    expect(() => Code.WALL_SECS_TO_FRAMEIDX_RIGHT(52, '25.000', 'nondrop'))
+        .toThrow(/dropType value must be "non-drop" or "drop"/);
+  });
+
+  it('converts zero and positive wallSecs correctly', () => {
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(0, '23.976', 'non-drop')).toBe(0);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(0, '24.00', 'non-drop')).toBe(0);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(0, '50.00', 'non-drop')).toBe(0);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(1.03999999, '50.00', 'non-drop')).toBe(52);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(1.04, '50.00', 'non-drop')).toBe(52);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(1.04000001, '50.00', 'non-drop')).toBe(53);
+    
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(60.02663333, '29.97', 'drop')).toBe(1799);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(60.02663334, '29.97', 'drop')).toBe(1800);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(60.06, '29.97', 'drop')).toBe(1800);
+
+    // 44:33:22:11 => 160,402 timecode seconds plus 11 frames:
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.86079166, '23.976', 'non-drop')).toBe(3849659);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.86079166, '23.98', 'non-drop')).toBe(3849659);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.86079167, '23.976', 'non-drop')).toBe(3849660);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.86079167, '23.98', 'non-drop')).toBe(3849660);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.45833333, '24.000', 'non-drop')).toBe(3849659);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.45833333, '24.00', 'non-drop')).toBe(3849659);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.45833334, '24.000', 'non-drop')).toBe(3849660);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.45833334, '24.00', 'non-drop')).toBe(3849660);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.43999999, '25.000', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.43999999, '25.00', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.44, '25.000', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.44, '25.00', 'non-drop')).toBe(4010061);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.44000001, '25.000', 'non-drop')).toBe(4010062);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.44000001, '25.00', 'non-drop')).toBe(4010062);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.76903333, '29.970', 'non-drop')).toBe(4812071);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.76903333, '29.97', 'non-drop')).toBe(4812071);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.76903334, '29.970', 'non-drop')).toBe(4812072);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.76903334, '29.97', 'non-drop')).toBe(4812072);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.36666666, '30.000', 'non-drop')).toBe(4812071);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.36666666, '30.00', 'non-drop')).toBe(4812071);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.36666667, '30.000', 'non-drop')).toBe(4812072);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.36666667, '30.00', 'non-drop')).toBe(4812072);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.63139583, '47.952', 'non-drop')).toBe(7699307);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.63139583, '47.95', 'non-drop')).toBe(7699307);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.63139584, '47.952', 'non-drop')).toBe(7699308);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.63139584, '47.95', 'non-drop')).toBe(7699308);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22916666, '48.000', 'non-drop')).toBe(7699307);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22916666, '48.00', 'non-drop')).toBe(7699307);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22916667, '48.000', 'non-drop')).toBe(7699308);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22916667, '48.00', 'non-drop')).toBe(7699308);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.21999999, '50.000', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.21999999, '50.00', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22, '50.000', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22, '50.00', 'non-drop')).toBe(8020111);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22000001, '50.000', 'non-drop')).toBe(8020112);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.22000001, '50.00', 'non-drop')).toBe(8020112);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.58551666, '59.940', 'non-drop')).toBe(9624131);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.58551666, '59.94', 'non-drop')).toBe(9624131);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.58551667, '59.940', 'non-drop')).toBe(9624132);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160562.58551667, '59.94', 'non-drop')).toBe(9624132);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.18333333, '60.000', 'non-drop')).toBe(9624131);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.18333333, '60.00', 'non-drop')).toBe(9624131);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.18333334, '60.000', 'non-drop')).toBe(9624132);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.18333334, '60.00', 'non-drop')).toBe(9624132);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.20863333, '29.970', 'drop')).toBe(4807259);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.20863333, '29.97', 'drop')).toBe(4807259);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.20863334, '29.970', 'drop')).toBe(4807260);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.20863334, '29.97', 'drop')).toBe(4807260);
+
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.02511666, '59.940', 'drop')).toBe(9614507);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.02511666, '59.94', 'drop')).toBe(9614507);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.02511667, '59.940', 'drop')).toBe(9614508);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(160402.02511667, '59.94', 'drop')).toBe(9614508);
+  });
+
+  it('converts negative wallSecs correctly', () => {
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(-1.03999999, '50.00', 'non-drop')).toBe(-51);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(-1.04, '50.00', 'non-drop')).toBe(-52);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(-1.04000001, '50.00', 'non-drop')).toBe(-52);
+    
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(-60.02663333, '29.97', 'drop')).toBe(-1798);
+    expect(Code.WALL_SECS_TO_FRAMEIDX_RIGHT(-60.02663334, '29.97', 'drop')).toBe(-1799);
+  });
+});
+
+describe('WALL_SECS_TO_TC_LEFT', () => {
+  it('rejects invalid wallSecs values and timecode standards', () => {
+    expect(() => Code.WALL_SECS_TO_TC_LEFT(-123.45, '60.000'))
+        .toThrow(/negative timecode values are not supported/);
+
+    expect(() => Code.WALL_SECS_TO_TC_LEFT(123.45, '12.00', 'non-drop'))
+        .toThrow(/Unsupported frame rate: "12.00"/);
+    expect(() => Code.WALL_SECS_TO_TC_LEFT(123.45, '25.000', 'nondrop'))
+        .toThrow(/dropType value must be "non-drop" or "drop"/);
+  });
+
+  it('converts to wall seconds correctly', () => {
+    expect(Code.WALL_SECS_TO_TC_LEFT(1.04, '50.00', 'non-drop')).toBe('00:00:01:02');
+
+    expect(Code.WALL_SECS_TO_TC_RIGHT(60.02663333, '29.97', 'drop')).toBe('00:00:59:29');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(60.02663334, '29.97', 'drop')).toBe('00:01:00:02');
+
+    expect(Code.WALL_SECS_TO_TC_LEFT(60.02663333, '29.97', 'drop')).toBe('00:00:59:28');
+    expect(Code.WALL_SECS_TO_TC_LEFT(60.02663334, '29.97', 'drop')).toBe('00:00:59:29');
+    expect(Code.WALL_SECS_TO_TC_LEFT(60.06, '29.97', 'drop')).toBe('00:01:00:02');
+
+    // 44:33:22:11 => 160,402 timecode seconds plus 11 frames:
+
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.86079167, '23.976', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.86079167, '23.98', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.45833334, '24.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.45833334, '24.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.44, '25.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.44, '25.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.76903334, '29.970', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.76903334, '29.97', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.36666667, '30.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.36666667, '30.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.63139584, '47.952', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.63139584, '47.95', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.22916667, '48.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.22916667, '48.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.22, '50.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.22, '50.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.58551667, '59.940', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160562.58551667, '59.94', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.18333334, '60.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.18333334, '60.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.20863334, '29.970', 'drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.20863334, '29.97', 'drop')).toBe('44:33:22:11');
+
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.02511667, '59.940', 'drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_LEFT(160402.02511667, '59.94', 'drop')).toBe('44:33:22:11');
+  });
+});
+
+describe('WALL_SECS_TO_TC_RIGHT', () => {
+  it('rejects invalid wallSecs values and timecode standards', () => {
+    expect(() => Code.WALL_SECS_TO_TC_RIGHT(-123.45, '60.000'))
+        .toThrow(/negative timecode values are not supported/);
+
+    expect(() => Code.WALL_SECS_TO_TC_RIGHT(123.45, '12.00', 'non-drop'))
+        .toThrow(/Unsupported frame rate: "12.00"/);
+    expect(() => Code.WALL_SECS_TO_TC_RIGHT(123.45, '25.000', 'nondrop'))
+        .toThrow(/dropType value must be "non-drop" or "drop"/);
+  });
+
+  it('converts to wall seconds correctly', () => {
+    expect(Code.WALL_SECS_TO_TC_RIGHT(1.04, '50.00', 'non-drop')).toBe('00:00:01:02');
+
+    expect(Code.WALL_SECS_TO_TC_RIGHT(60.02663333, '29.97', 'drop')).toBe('00:00:59:29');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(60.02663334, '29.97', 'drop')).toBe('00:01:00:02');
+
+    // 44:33:22:11 => 160,402 timecode seconds plus 11 frames:
+
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.86079166, '23.976', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.86079166, '23.98', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.45833333, '24.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.45833333, '24.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.44, '25.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.44, '25.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.76903333, '29.970', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.76903333, '29.97', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.36666666, '30.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.36666666, '30.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.63139583, '47.952', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.63139583, '47.95', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.22916666, '48.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.22916666, '48.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.22, '50.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.22, '50.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.58551666, '59.940', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160562.58551666, '59.94', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.18333333, '60.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.18333333, '60.00', 'non-drop')).toBe('44:33:22:11');
+    
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.20863333, '29.970', 'drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.20863333, '29.97', 'drop')).toBe('44:33:22:11');
+
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.02511666, '59.940', 'drop')).toBe('44:33:22:11');
+    expect(Code.WALL_SECS_TO_TC_RIGHT(160402.02511666, '59.94', 'drop')).toBe('44:33:22:11');
+  });
+});
+
+describe('FRAMEIDX_TO_TC', () => {
+  it('rejects invalid frameIdx values and timecode standards', () => {
+    expect(() => Code.FRAMEIDX_TO_TC(-1234, '60.000'))
+        .toThrow(/negative timecode values are not supported/);
+
+    expect(() => Code.FRAMEIDX_TO_TC(1234, '12.00', 'non-drop'))
+        .toThrow(/Unsupported frame rate: "12.00"/);
+    expect(() => Code.FRAMEIDX_TO_TC(1234, '25.000', 'nondrop'))
+        .toThrow(/dropType value must be "non-drop" or "drop"/);
+  });
+
+  it('converts non-drop frames correctly', () => {
+    expect(Code.FRAMEIDX_TO_TC(0, '24.00', 'non-drop')).toBe('00:00:00:00');
+    expect(Code.FRAMEIDX_TO_TC(1, '29.97', 'non-drop')).toBe('00:00:00:01');
+    expect(Code.FRAMEIDX_TO_TC(2, '50.000', 'non-drop')).toBe('00:00:00:02');
+
+    expect(Code.FRAMEIDX_TO_TC(24, '24.00', 'non-drop')).toBe('00:00:01:00');
+    expect(Code.FRAMEIDX_TO_TC(31, '29.97', 'non-drop')).toBe('00:00:01:01');
+    expect(Code.FRAMEIDX_TO_TC(52, '50.000', 'non-drop')).toBe('00:00:01:02');
+
+    // 160,402 timecode seconds plus 11 frames:
+    expect(Code.FRAMEIDX_TO_TC(3849659, '23.976', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(3849659, '23.98', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(3849659, '24.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(3849659, '24.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.FRAMEIDX_TO_TC(4010061, '25.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(4010061, '25.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.FRAMEIDX_TO_TC(4812071, '29.970', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(4812071, '29.97', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(4812071, '30.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(4812071, '30.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.FRAMEIDX_TO_TC(7699307, '47.952', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(7699307, '47.95', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(7699307, '48.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(7699307, '48.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.FRAMEIDX_TO_TC(8020111, '50.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(8020111, '50.00', 'non-drop')).toBe('44:33:22:11');
+
+    expect(Code.FRAMEIDX_TO_TC(9624131, '59.940', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(9624131, '59.94', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(9624131, '60.000', 'non-drop')).toBe('44:33:22:11');
+    expect(Code.FRAMEIDX_TO_TC(9624131, '60.00', 'non-drop')).toBe('44:33:22:11');
+  });
+
+  it('converts drop frames correctly', () => {
+    expect(Code.FRAMEIDX_TO_TC(1799, '29.97', 'drop')).toBe('00:00:59:29');
+    expect(Code.FRAMEIDX_TO_TC(1800, '29.97', 'drop')).toBe('00:01:00:02');
+
+    // 6*44 + 3 = 267 blocks of 10 minutes, plus 00:03:22:11:
+
+    // 29.97 drop: 17,982 frames per 10 minutes (267 * 17,982 = 4,801,194),
+    //             plus 00:03:22:11 (202s*30/s + 11 = 6,071 frames; minus 3m * 2/m = 6 dropped),
+    //             total 4,801,194 + 6,071 - 6 = 4,807,259.
+    expect(Code.FRAMEIDX_TO_TC(4807259, '29.970', 'drop')).toBe('44:33:22:11');
+
+    // 59.94 drop: 35,964 frames per 10 minutes (267 * 35,964 = 9,602,388),
+    //             plus 00:03:22:11 (202s*60/s + 11 = 12,131 frames; minus 3m * 4/m = 12 dropped),
+    //             total 9,602,388 + 12,131 - 12 = 9,614,507.
+    expect(Code.FRAMEIDX_TO_TC(9614507, '59.940', 'drop')).toBe('44:33:22:11');
+  });
+});

@@ -16,13 +16,19 @@
 // MIT License.
 //
 // Custom Functions list (with example arguments):
-// - TC_ERROR("01:02:03:04", "23.976", "non-drop"): error string if invalid
-// - TC_TO_FRAMEIDX("00:00:01:02", "50.00", "non-drop"): 52 (frame index)
-// - FRAMEIDX_TO_WALL_SECS(52, "50.00", "non-drop"): 1.04 secs (wall time)
 // - TC_TO_WALL_SECS("00:00:01:02", "50.00", "non-drop"): 1.04 secs (wall time)
 // - WALL_SECS_BETWEEN_TCS("00:00:01:03", "00:02:05:11", "24.00", "non-drop"):
 //       124.33333333... secs (wall time)
 // - WALL_SECS_TO_DURSTR(3765): "1h 02m 45s" (human-readable duration string)
+// - WALL_SECS_TO_TC_LEFT(1.041, "50.00", "non-drop"): "00:00:01:02" (timecode <= wallSecs)
+// - WALL_SECS_TO_TC_RIGHT(1.041, "50.00", "non-drop"): "00:00:01:03" (timecode >= wallSecs)
+// - TC_ERROR("01:02:03:04", "23.976", "non-drop"): error string if invalid
+//
+// - TC_TO_FRAMEIDX("00:00:01:02", "50.00", "non-drop"): 52 (frame index)
+// - FRAMEIDX_TO_TC(52, "50.00", "non-drop"): "00:00:01:02" (timecode)
+// - FRAMEIDX_TO_WALL_SECS(52, "50.00", "non-drop"): 1.04 secs (wall time)
+// - WALL_SECS_TO_FRAMEIDX_LEFT(1.041, "50.00", "non-drop"): 52 (frame index <= time)
+// - WALL_SECS_TO_FRAMEIDX_RIGHT(1.041, "50.00", "non-drop"): 53 (frame index >= time)
 
 /**
  * Support these values of input frameRate strings. Require exactly 2 or 3
@@ -427,14 +433,205 @@ function WALL_SECS_TO_DURSTR(wallSecs) {
   return output;
 }
 
+/**
+ * Returns frame index of closest frame before or exactly equal to the given
+ * wallSecs (offset from origin 00:00:00:00).
+ *
+ * Note that negative wallSecs will yield negative frame indexes.
+ * @param {number} wallSecs Time in wall seconds (possibly fractional) offset from
+ *     origin 00:00:00:00.
+ * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
+ *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
+ * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @return {number} Integer frame index <= given wallSecs.
+ * @customFunction
+ */
+function WALL_SECS_TO_FRAMEIDX_LEFT(wallSecs, frameRate, dropType) {
+  const tcStd = parseTcStd_(frameRate, dropType);
+
+  const fractionalFrameIdx = wallSecsToFractionalFrameIdx_(wallSecs, tcStd);
+  return Math.floor(fractionalFrameIdx);
+}
+
+/**
+ * Returns frame index of closest frame after or exactly equal to the given
+ * wallSecs (offset from origin 00:00:00:00).
+ * 
+ * Note that negative wallSecs will yield negative frame indexes.
+ * @param {number} wallSecs Time in wall seconds (possibly fractional) offset from
+ *     origin 00:00:00:00.
+ * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
+ *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
+ * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @return {number} Integer frame index >= given wallSecs.
+ * @customFunction
+ */
+function WALL_SECS_TO_FRAMEIDX_RIGHT(wallSecs, frameRate, dropType) {
+  const tcStd = parseTcStd_(frameRate, dropType);
+
+  const fractionalFrameIdx = wallSecsToFractionalFrameIdx_(wallSecs, tcStd);
+  return Math.ceil(fractionalFrameIdx);
+}
+
+/**
+ * @param {number} wallSecs 
+ * @param {TimecodeStandard} tcStd
+ * @return {number}
+ * @private
+ */
+function wallSecsToFractionalFrameIdx_(wallSecs, tcStd) {
+  if (!Number.isFinite(wallSecs)) {
+    throw Error('wallSecs must be a finite number: ' + wallSecs);
+  }
+
+  return wallSecs * tcStd.frames / tcStd.perWallSecs;
+}
+
+/**
+ * Returns timecode string of closest frame before or exactly equal to the given
+ * wallSecs (offset from origin 00:00:00:00).
+ *
+ * Note that negative wallSecs are NOT supported.
+ * @param {number} wallSecs Time in wall seconds (possibly fractional) offset from
+ *     origin 00:00:00:00.
+ * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
+ *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
+ * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @return {string} Timecode of nearest frame <= wallSecs.
+ * @customFunction
+ */
+function WALL_SECS_TO_TC_LEFT(wallSecs, frameRate, dropType = 'non-drop') {
+  const tcStd = parseTcStd_(frameRate, dropType);
+
+  const fractionalFrameIdx = wallSecsToFractionalFrameIdx_(wallSecs, tcStd);
+  const frameIdx = Math.floor(fractionalFrameIdx);
+  return frameIdxToTc_(frameIdx, tcStd);
+}
+
+/**
+ * Returns timecode string of closest frame after or exactly equal to the given
+ * wallSecs (offset from origin 00:00:00:00).
+ *
+ * Note that negative wallSecs are NOT supported.
+ * @param {number} wallSecs Time in wall seconds (possibly fractional) offset from
+ *     origin 00:00:00:00.
+ * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
+ *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
+ * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @return {string} Timecode of nearest frame >= wallSecs.
+ * @customFunction
+ */
+function WALL_SECS_TO_TC_RIGHT(wallSecs, frameRate, dropType = 'non-drop') {
+  const tcStd = parseTcStd_(frameRate, dropType);
+
+  const fractionalFrameIdx = wallSecsToFractionalFrameIdx_(wallSecs, tcStd);
+  const frameIdx = Math.ceil(fractionalFrameIdx);
+  return frameIdxToTc_(frameIdx, tcStd);
+}
+
+/**
+ * Returns timecode string for given frame index.
+ * 
+ * Note that negative frameIdx values are NOT supported.
+* @param {number} frameIdx The 0-based frame index.
+ * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
+ *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
+ * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @return {string} Timecode of given frameIdx.
+ * @customFunction
+ */
+function FRAMEIDX_TO_TC(frameIdx, frameRate, dropType = 'non-drop') {
+  const tcStd = parseTcStd_(frameRate, dropType);
+  return frameIdxToTc_(frameIdx, tcStd);
+}
+
+/**
+ * @param {number} frameIdx 
+ * @param {TimecodeStandard} tcStd
+ * @return {string}
+ * @private
+ */
+function frameIdxToTc_(frameIdx, tcStd) {
+  if (frameIdx < 0) {
+    throw Error('negative timecode values are not supported');
+  }
+
+  const framesPerMin = tcStd.intFps * SECS_PER_MIN_;
+  const framesPerHr = framesPerMin * MINS_PER_HR_;
+
+  // If this is a drop frame standard, adjust for any dropped frames.
+  let framesRemaining = frameIdx + framesDroppedBeforeFrameIdx_(frameIdx, tcStd);
+
+  const h = Math.floor(framesRemaining / framesPerHr);
+  framesRemaining -= h * framesPerHr;
+
+  const m = Math.floor(framesRemaining / framesPerMin);
+  framesRemaining -= m * framesPerMin;
+
+  const s = Math.floor(framesRemaining / tcStd.intFps);
+  framesRemaining -= s * tcStd.intFps;
+
+  const f = framesRemaining;
+
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  const ff = String(f).padStart(2, '0');
+
+  // TODO: Optionally support ';' separator for drop frame standards, if this
+  // feature is sufficiently requested.
+  return `${hh}:${mm}:${ss}:${ff}`;
+}
+
+/**
+ * @param {number} frameIdx
+ * @param {TimecodeStandard} tcStd
+ * @return {number}
+ * @private
+ */
+function framesDroppedBeforeFrameIdx_(frameIdx, tcStd) {
+  if (tcStd.dropFramesPer10Mins === 0) {
+    return 0;
+  }
+
+  const framesPerNonDropMin = tcStd.intFps * SECS_PER_MIN_;
+  const framesPerDroppedBlock = framesPerDroppedBlock_(tcStd)
+  const framesPerDropMin = framesPerNonDropMin - framesPerDroppedBlock;
+
+  // Count # of full blocks of 10 minutes (of timecode, not wall time).
+  const framesPer10Mins = 10 * framesPerNonDropMin - tcStd.dropFramesPer10Mins;
+
+  let framesRemaining = frameIdx;
+  const numComplete10MinBlocks = Math.floor(framesRemaining / framesPer10Mins);
+  framesRemaining -= framesPer10Mins * numComplete10MinBlocks;
+
+  let numDroppedFrames = numComplete10MinBlocks * tcStd.dropFramesPer10Mins;
+
+  if (framesRemaining >= framesPerNonDropMin) {
+    // First minute of this 10 minute block has no dropped frames.
+    framesRemaining -= framesPerNonDropMin;
+
+    // Each complete drop minute plus the current minute drops one block of frames.
+    const numCompleteDropMins = Math.floor(framesRemaining / framesPerDropMin);    
+    numDroppedFrames += (numCompleteDropMins + 1) * framesPerDroppedBlock;
+  }
+
+  return numDroppedFrames;
+}
+
 // For command-line testing:
 if ((typeof module !== 'undefined') && module.exports) {
   module.exports = {
+    FRAMEIDX_TO_TC: FRAMEIDX_TO_TC,
+    FRAMEIDX_TO_WALL_SECS: FRAMEIDX_TO_WALL_SECS,
     TC_ERROR: TC_ERROR,
     TC_TO_FRAMEIDX: TC_TO_FRAMEIDX,
-    FRAMEIDX_TO_WALL_SECS: FRAMEIDX_TO_WALL_SECS,
     TC_TO_WALL_SECS: TC_TO_WALL_SECS,
     WALL_SECS_BETWEEN_TCS: WALL_SECS_BETWEEN_TCS,
     WALL_SECS_TO_DURSTR: WALL_SECS_TO_DURSTR,
+    WALL_SECS_TO_FRAMEIDX_LEFT: WALL_SECS_TO_FRAMEIDX_LEFT,
+    WALL_SECS_TO_FRAMEIDX_RIGHT: WALL_SECS_TO_FRAMEIDX_RIGHT,
+    WALL_SECS_TO_TC_LEFT: WALL_SECS_TO_TC_LEFT,
+    WALL_SECS_TO_TC_RIGHT: WALL_SECS_TO_TC_RIGHT,
   };
 }

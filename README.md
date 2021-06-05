@@ -51,7 +51,7 @@ non-drop,drop
 ```JavaScript
 =WALL_SECS_TO_DURSTR(3765)
 ```
-- Yields `"1h 02m 45s"` (a human-readable duration string).
+- Yields `"1h 02m 45s"` (a human-readable duration string). Rounds to nearest second.
 
 ```JavaScript
 =WALL_SECS_TO_TC_LEFT(1.041, "50.00", "non-drop")

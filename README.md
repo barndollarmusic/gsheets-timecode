@@ -98,7 +98,7 @@ before (*i.e.* to the left of) the given `wallSecs` value of `1.041` (true secon
 wall time measured from `00:00:00:00`).
 
 ```JavaScript
-=WALL_SECS_TO_FRAMEIDX_LEFT(1.041, "50.00", "non-drop")
+=WALL_SECS_TO_FRAMEIDX_RIGHT(1.041, "50.00", "non-drop")
 ```
 - Yields `53`, the frame index of the closest frame that is exactly at or
 after (*i.e.* to the right of) the given `wallSecs` value of `1.041` (true seconds of

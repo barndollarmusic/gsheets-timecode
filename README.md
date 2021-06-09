@@ -5,10 +5,12 @@ Google Sheets custom functions for working with video timecode standards and wal
 
 ![Preview of spreadsheet using timecode functions](preview.png)
 
+*Using Microsoft Excel instead? Check out [excel-timecode](https://github.com/barndollarmusic/excel-timecode)*.
+
 Designed for film & television composers, though these may be useful for anyone who works with
 timecode values in Google Sheets.
 
-Author: [Eric Barndollar](https://barndollarmusic.com)
+Primary Author: [Eric Barndollar](https://barndollarmusic.com)
 
 This is open source software that is free to use and share, as covered by the
 [MIT License](LICENSE).

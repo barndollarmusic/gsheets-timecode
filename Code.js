@@ -30,6 +30,29 @@
 // - WALL_SECS_TO_FRAMEIDX_LEFT(1.041, "50.00", "non-drop"): 52 (frame index <= time)
 // - WALL_SECS_TO_FRAMEIDX_RIGHT(1.041, "50.00", "non-drop"): 53 (frame index >= time)
 
+//==================================================================================================
+// Platform-Specific
+//==================================================================================================
+
+// NOTE: Any code specific to Google Sheets or Microsoft Excel should go here.
+
+/**
+ * @param {string} msg
+ * @return {Error}
+ * @private
+ */
+ function inputValueErr_(msg) {
+  // NOTE: Microsoft Excel requires a specific Error type, while Google Sheets
+  // just displays the error message from any Error object.
+  return Error(msg);
+}
+
+//==================================================================================================
+// Common Code
+//==================================================================================================
+
+// NOTE: All remaining code should be exactly the same across Google Sheets and Microsoft Excel.
+
 /**
  * Support these values of input frameRate strings. Require exactly 2 or 3
  * decimal digits of precision to avoid confusion as to e.g. whether "24"
@@ -92,30 +115,31 @@ const FRAME_RATE_STR_FMT_ = /^[0-9][0-9].[0-9][0-9][0-9]?$/;
  */
 function parseTcStd_(frameRateStr, dropTypeStr) {
   if (typeof frameRateStr !== 'string') {
-    throw Error('frameRate must be a single plain text value');
+    throw inputValueErr_('frameRate must be a single plain text value');
   }
   frameRateStr = frameRateStr.trim();
 
   if (!FRAME_RATE_STR_FMT_.test(frameRateStr)) {
-    throw Error('frameRate must contain 2 or 3 digits after period (e.g. "23.976" or "24.00")');
+    throw inputValueErr_(
+        'frameRate must contain 2 or 3 digits after period (e.g. "23.976" or "24.00")');
   }
   const frameRate = FRAME_RATES_[frameRateStr];
   if (!frameRate) {
-    throw Error(`Unsupported frame rate: "${frameRateStr}"`);
+    throw inputValueErr_(`Unsupported frame rate: "${frameRateStr}"`);
   }
 
   if (typeof dropTypeStr !== 'string') {
-    throw Error('dropType must be a single plain text value');
+    throw inputValueErr_('dropType must be a single plain text value');
   }
   dropTypeStr = dropTypeStr.trim().toLowerCase();
   if ((dropTypeStr !== 'drop') && (dropTypeStr !== 'non-drop')) {
-    throw Error('dropType value must be "non-drop" or "drop" (without quotes)');
+    throw inputValueErr_('dropType value must be "non-drop" or "drop" (without quotes)');
   }
 
   let dropFramesPer10Mins = 0;
   if (dropTypeStr === 'drop') {
     if (!(frameRateStr in DROP_FRAMES_PER_10MINS_)) {
-      throw Error(`frameRate ${frameRateStr} must be non-drop`);
+      throw inputValueErr_(`frameRate ${frameRateStr} must be non-drop`);
     }
     dropFramesPer10Mins = DROP_FRAMES_PER_10MINS_[frameRateStr];
   }
@@ -140,12 +164,12 @@ function parseTcStd_(frameRateStr, dropTypeStr) {
  */
 function parseTc_(timecode) {
   if (typeof timecode !== 'string') {
-    throw Error('timecode must be a single plain text value');
+    throw inputValueErr_('timecode must be a single plain text value');
   }
 
   const matches = timecode.trim().match(TC_STR_FMT_);
   if (!matches) {
-    throw Error(`timecode must be in HH:MM:SS:FF format: "${timecode}"`);
+    throw inputValueErr_(`timecode must be in HH:MM:SS:FF format: "${timecode}"`);
   }
 
   return {
@@ -206,28 +230,28 @@ function validateTc_(timecode, tc, tcStd) {
   // All digit HH values (00-99) are valid...
 
   if (tc.mm >= MINS_PER_HR_) {
-    throw Error(`timecode MM must be in range 00-59: "${tc.mm}"`);
+    throw inputValueErr_(`timecode MM must be in range 00-59: "${tc.mm}"`);
   }
 
   if (tc.ss >= SECS_PER_MIN_) {
-    throw Error(`timecode SS must be in range 00-59: "${tc.ss}"`);
+    throw inputValueErr_(`timecode SS must be in range 00-59: "${tc.ss}"`);
   }
 
   if (tc.ff >= tcStd.intFps) {
-    throw Error(`timecode FF must be in range 00-${tcStd.intFps - 1}: "${tc.ff}"`);
+    throw inputValueErr_(`timecode FF must be in range 00-${tcStd.intFps - 1}: "${tc.ff}"`);
   }
 
   // Frame number must not be a dropped frame.
   if (isDropSec_(tc, tcStd)) {
     if (tc.ff < framesPerDroppedBlock_(tcStd)) {
-      throw Error(`timecode invalid: "${timecode}" is a dropped frame number`);
+      throw inputValueErr_(`timecode invalid: "${timecode}" is a dropped frame number`);
     }
   }
 
   // If timecode string used semicolons, make sure it was a drop standard.
   const hasSemicolons = (timecode.indexOf(';') >= 0);
   if (hasSemicolons && (tcStd.dropFramesPer10Mins === 0)) {
-    throw Error(`only drop timecode may use semi-colon separator: "${timecode}"`);
+    throw inputValueErr_(`only drop timecode may use semi-colon separator: "${timecode}"`);
   }
 }
 
@@ -238,11 +262,11 @@ function validateTc_(timecode, tc, tcStd) {
  *     quotes). May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {string} Empty string if valid, or non-empty error message.
  * @customFunction
  */
-function TC_ERROR(timecode, frameRate, dropType = 'non-drop') {
+function TC_ERROR(timecode, frameRate, dropType) {
   try {
     const tcStd = parseTcStd_(frameRate, dropType);
     const tc = parseTc_(timecode);
@@ -263,11 +287,11 @@ function TC_ERROR(timecode, frameRate, dropType = 'non-drop') {
  *     quotes). May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {number} Frame index.
  * @customFunction
  */
-function TC_TO_FRAMEIDX(timecode, frameRate, dropType = 'non-drop') {
+function TC_TO_FRAMEIDX(timecode, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
   const tc = parseTc_(timecode);
   validateTc_(timecode, tc, tcStd);
@@ -308,14 +332,14 @@ function tcToFrameIdx_(tc, tcStd) {
  * @param {number} frameIdx The 0-based frame index.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {number} Wall time in seconds (possibly fractional).
  * @customFunction
  */
-function FRAMEIDX_TO_WALL_SECS(frameIdx, frameRate, dropType = 'non-drop') {
+function FRAMEIDX_TO_WALL_SECS(frameIdx, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
   if (!Number.isInteger(frameIdx) || (frameIdx < 0)) {
-    throw Error('frameIdx must be non-negative integer');
+    throw inputValueErr_('frameIdx must be non-negative integer');
   }
   return frameIdxToWallSecs_(frameIdx, tcStd);
 }
@@ -337,11 +361,11 @@ function frameIdxToWallSecs_(frameIdx, tcStd) {
  *     quotes). May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {number} Wall time in seconds (possibly fractional).
  * @customFunction
  */
-function TC_TO_WALL_SECS(timecode, frameRate, dropType = 'non-drop') {
+function TC_TO_WALL_SECS(timecode, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
   const tc = parseTc_(timecode);
   validateTc_(timecode, tc, tcStd);
@@ -359,12 +383,12 @@ function TC_TO_WALL_SECS(timecode, frameRate, dropType = 'non-drop') {
  *     quotes). May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {number} Duration from start to end as measured by wall time in seconds
  *     (possibly fractional).
  * @customFunction
  */
-function WALL_SECS_BETWEEN_TCS(start, end, frameRate, dropType = 'non-drop') {
+function WALL_SECS_BETWEEN_TCS(start, end, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
 
   const startTc = parseTc_(start);
@@ -390,7 +414,7 @@ function WALL_SECS_BETWEEN_TCS(start, end, frameRate, dropType = 'non-drop') {
  */
 function WALL_SECS_TO_DURSTR(wallSecs) {
   if ((typeof wallSecs !== 'number') || !Number.isFinite(wallSecs)) {
-    throw Error('wallSecs must be a finite number');
+    throw inputValueErr_('wallSecs must be a finite number');
   }
 
   let isNegative = false;
@@ -442,7 +466,7 @@ function WALL_SECS_TO_DURSTR(wallSecs) {
  *     origin 00:00:00:00.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {number} Integer frame index <= given wallSecs.
  * @customFunction
  */
@@ -462,7 +486,7 @@ function WALL_SECS_TO_FRAMEIDX_LEFT(wallSecs, frameRate, dropType) {
  *     origin 00:00:00:00.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {number} Integer frame index >= given wallSecs.
  * @customFunction
  */
@@ -481,7 +505,7 @@ function WALL_SECS_TO_FRAMEIDX_RIGHT(wallSecs, frameRate, dropType) {
  */
 function wallSecsToFractionalFrameIdx_(wallSecs, tcStd) {
   if (!Number.isFinite(wallSecs)) {
-    throw Error('wallSecs must be a finite number: ' + wallSecs);
+    throw inputValueErr_('wallSecs must be a finite number: ' + wallSecs);
   }
 
   return wallSecs * tcStd.frames / tcStd.perWallSecs;
@@ -496,11 +520,11 @@ function wallSecsToFractionalFrameIdx_(wallSecs, tcStd) {
  *     origin 00:00:00:00.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {string} Timecode of nearest frame <= wallSecs.
  * @customFunction
  */
-function WALL_SECS_TO_TC_LEFT(wallSecs, frameRate, dropType = 'non-drop') {
+function WALL_SECS_TO_TC_LEFT(wallSecs, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
 
   const fractionalFrameIdx = wallSecsToFractionalFrameIdx_(wallSecs, tcStd);
@@ -517,11 +541,11 @@ function WALL_SECS_TO_TC_LEFT(wallSecs, frameRate, dropType = 'non-drop') {
  *     origin 00:00:00:00.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {string} Timecode of nearest frame >= wallSecs.
  * @customFunction
  */
-function WALL_SECS_TO_TC_RIGHT(wallSecs, frameRate, dropType = 'non-drop') {
+function WALL_SECS_TO_TC_RIGHT(wallSecs, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
 
   const fractionalFrameIdx = wallSecsToFractionalFrameIdx_(wallSecs, tcStd);
@@ -536,11 +560,11 @@ function WALL_SECS_TO_TC_RIGHT(wallSecs, frameRate, dropType = 'non-drop') {
  * @param {number} frameIdx The 0-based frame index.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
- * @param {string} dropType [OPTIONAL] "drop" or "non-drop" (the default).
+ * @param {string} dropType "drop" or "non-drop".
  * @return {string} Timecode of given frameIdx.
  * @customFunction
  */
-function FRAMEIDX_TO_TC(frameIdx, frameRate, dropType = 'non-drop') {
+function FRAMEIDX_TO_TC(frameIdx, frameRate, dropType) {
   const tcStd = parseTcStd_(frameRate, dropType);
   return frameIdxToTc_(frameIdx, tcStd);
 }
@@ -553,7 +577,7 @@ function FRAMEIDX_TO_TC(frameIdx, frameRate, dropType = 'non-drop') {
  */
 function frameIdxToTc_(frameIdx, tcStd) {
   if (frameIdx < 0) {
-    throw Error('negative timecode values are not supported');
+    throw inputValueErr_('negative timecode values are not supported');
   }
 
   const framesPerMin = tcStd.intFps * SECS_PER_MIN_;
@@ -619,7 +643,11 @@ function framesDroppedBeforeFrameIdx_(frameIdx, tcStd) {
   return numDroppedFrames;
 }
 
-// For command-line testing:
+
+//==================================================================================================
+// Module Exports
+//==================================================================================================
+
 if ((typeof module !== 'undefined') && module.exports) {
   module.exports = {
     FRAMEIDX_TO_TC: FRAMEIDX_TO_TC,

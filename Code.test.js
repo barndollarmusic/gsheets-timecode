@@ -29,7 +29,7 @@ describe('TC_ERROR', () => {
     expect(Code.TC_ERROR('01:02:03:04', '60.000', 'NoN-DRop')).toBe('');
     expect(Code.TC_ERROR('01:02:03:04', '29.97', 'drop')).toBe('');
     expect(Code.TC_ERROR('01:02:03:04', '59.940', '  drOP  ')).toBe('');
-    expect(Code.TC_ERROR('01:02:03:04', '48.000')).toBe('');  // Defaults to non-drop.
+    expect(Code.TC_ERROR('01:02:03:04', '48.000', 'non-drop')).toBe('');
   });
 
   it('rejects invalid format timecode', () => {
@@ -41,7 +41,7 @@ describe('TC_ERROR', () => {
     expect(Code.TC_ERROR('1:2:3:4', '24.00', 'non-drop'))
         .toContain('timecode must be in HH:MM:SS:FF format: "1:2:3:4"');
     
-    expect(Code.TC_ERROR('00:00:00;00', '29.97'))  // Defaults to non-drop.
+    expect(Code.TC_ERROR('00:00:00;00', '29.97', 'non-drop'))
         .toContain('only drop timecode may use semi-colon separator: "00:00:00;00"');
     expect(Code.TC_ERROR('01;02;03;04', '59.940', 'non-drop'))
         .toContain('only drop timecode may use semi-colon separator: "01;02;03;04"');
@@ -91,7 +91,7 @@ describe('TC_ERROR', () => {
 
 describe('TC_TO_FRAMEIDX', () => {
   it('rejects invalid timecode values and timecode standards', () => {
-    expect(() => Code.TC_TO_FRAMEIDX(11223344, '60.000'))
+    expect(() => Code.TC_TO_FRAMEIDX(11223344, '60.000', 'non-drop'))
         .toThrow(/timecode must be a single plain text value/);
     expect(() => Code.TC_TO_FRAMEIDX('1:2:3:4', '24.00', 'non-drop'))
         .toThrow(/timecode must be in HH:MM:SS:FF format: "1:2:3:4"/);
@@ -165,7 +165,7 @@ describe('TC_TO_FRAMEIDX', () => {
 
 describe('FRAMEIDX_TO_WALL_SECS', () => {
   it('rejects invalid frameIdx values and timecode standards', () => {
-    expect(() => Code.FRAMEIDX_TO_WALL_SECS(-1, '60.000'))
+    expect(() => Code.FRAMEIDX_TO_WALL_SECS(-1, '60.000', 'non-drop'))
         .toThrow(/frameIdx must be non-negative integer/);
 
     expect(() => Code.FRAMEIDX_TO_WALL_SECS(27, '12.00', 'non-drop'))
@@ -249,7 +249,7 @@ describe('FRAMEIDX_TO_WALL_SECS', () => {
 
 describe('TC_TO_WALL_SECS', () => {
   it('rejects invalid timecode values and timecode standards', () => {
-    expect(() => Code.TC_TO_WALL_SECS(11223344, '60.000'))
+    expect(() => Code.TC_TO_WALL_SECS(11223344, '60.000', 'non-drop'))
         .toThrow(/timecode must be a single plain text value/);
     expect(() => Code.TC_TO_WALL_SECS('1:2:3:4', '24.00', 'non-drop'))
         .toThrow(/timecode must be in HH:MM:SS:FF format: "1:2:3:4"/);
@@ -339,7 +339,7 @@ describe('TC_TO_WALL_SECS', () => {
 
 describe('WALL_SECS_BETWEEN_TCS', () => {
   it('rejects invalid timecode values and timecode standards', () => {
-    expect(() => Code.WALL_SECS_BETWEEN_TCS(11223344, '44:33:22:11', '60.000'))
+    expect(() => Code.WALL_SECS_BETWEEN_TCS(11223344, '44:33:22:11', '60.000', 'non-drop'))
         .toThrow(/timecode must be a single plain text value/);
     expect(() => Code.WALL_SECS_BETWEEN_TCS('44:33:22:11', '1:2:3:4', '24.00', 'non-drop'))
         .toThrow(/timecode must be in HH:MM:SS:FF format: "1:2:3:4"/);
@@ -655,7 +655,7 @@ describe('WALL_SECS_TO_FRAMEIDX_RIGHT', () => {
 
 describe('WALL_SECS_TO_TC_LEFT', () => {
   it('rejects invalid wallSecs values and timecode standards', () => {
-    expect(() => Code.WALL_SECS_TO_TC_LEFT(-123.45, '60.000'))
+    expect(() => Code.WALL_SECS_TO_TC_LEFT(-123.45, '60.000', 'non-drop'))
         .toThrow(/negative timecode values are not supported/);
 
     expect(() => Code.WALL_SECS_TO_TC_LEFT(123.45, '12.00', 'non-drop'))
@@ -716,7 +716,7 @@ describe('WALL_SECS_TO_TC_LEFT', () => {
 
 describe('WALL_SECS_TO_TC_RIGHT', () => {
   it('rejects invalid wallSecs values and timecode standards', () => {
-    expect(() => Code.WALL_SECS_TO_TC_RIGHT(-123.45, '60.000'))
+    expect(() => Code.WALL_SECS_TO_TC_RIGHT(-123.45, '60.000', 'non-drop'))
         .toThrow(/negative timecode values are not supported/);
 
     expect(() => Code.WALL_SECS_TO_TC_RIGHT(123.45, '12.00', 'non-drop'))
@@ -773,7 +773,7 @@ describe('WALL_SECS_TO_TC_RIGHT', () => {
 
 describe('FRAMEIDX_TO_TC', () => {
   it('rejects invalid frameIdx values and timecode standards', () => {
-    expect(() => Code.FRAMEIDX_TO_TC(-1234, '60.000'))
+    expect(() => Code.FRAMEIDX_TO_TC(-1234, '60.000', 'non-drop'))
         .toThrow(/negative timecode values are not supported/);
 
     expect(() => Code.FRAMEIDX_TO_TC(1234, '12.00', 'non-drop'))

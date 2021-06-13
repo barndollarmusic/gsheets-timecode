@@ -158,13 +158,39 @@ function parseTcStd_(frameRateStr, dropTypeStr) {
  */
 
 /**
- * @param {string} timecode
+ * @param {string|number} timecode
  * @return {ParsedTimecode}
  * @private
  */
 function parseTc_(timecode) {
+  // If in number format, must be a positive integer in range [0, 99999999].
+  if (typeof timecode === 'number') {
+    if (!Number.isInteger(timecode) || (timecode < 0) || (99999999 < timecode)) {
+      throw inputValueErr_('numerical timecode must be an integer in [0, 99999999] range');
+    }
+
+    let digits = timecode;
+    const ff = digits % 100;
+
+    digits = (digits - ff) / 100;
+    const ss = digits % 100;
+
+    digits = (digits - ss) / 100;
+    const mm = digits % 100;
+
+    digits = (digits - mm) / 100;
+    const hh = digits % 100;
+
+    return {
+      hh: hh,
+      mm: mm,
+      ss: ss,
+      ff: ff,
+    };
+  }
+
   if (typeof timecode !== 'string') {
-    throw inputValueErr_('timecode must be a single plain text value');
+    throw inputValueErr_('timecode must be a single plain text value or custom format number');
   }
 
   const matches = timecode.trim().match(TC_STR_FMT_);
@@ -218,7 +244,7 @@ const MINS_PER_HR_ = 60;
 const SECS_PER_MIN_ = 60;
 
 /**
- * @param {string} timecode (Just for error messages).
+ * @param {string|number} timecode
  * @param {ParsedTimecode} tc
  * @param {TimecodeStandard} tcStd
  * @throws {Error} if invalid.
@@ -244,22 +270,25 @@ function validateTc_(timecode, tc, tcStd) {
   // Frame number must not be a dropped frame.
   if (isDropSec_(tc, tcStd)) {
     if (tc.ff < framesPerDroppedBlock_(tcStd)) {
-      throw inputValueErr_(`timecode invalid: "${timecode}" is a dropped frame number`);
+      throw inputValueErr_(`timecode invalid: "${tcToStr_(tc)}" is a dropped frame number`);
     }
   }
 
-  // If timecode string used semicolons, make sure it was a drop standard.
-  const hasSemicolons = (timecode.indexOf(';') >= 0);
-  if (hasSemicolons && (tcStd.dropFramesPer10Mins === 0)) {
-    throw inputValueErr_(`only drop timecode may use semi-colon separator: "${timecode}"`);
+  // If string-format timecode used semicolons, make sure it was a drop standard.
+  if (typeof timecode === 'string') {
+    const hasSemicolons = (timecode.indexOf(';') >= 0);
+    if (hasSemicolons && (tcStd.dropFramesPer10Mins === 0)) {
+      throw inputValueErr_(`only drop timecode may use semi-colon separator: "${timecode}"`);
+    }
   }
 }
 
 /**
  * Returns empty string if the input timecode value is valid time in the given timecode
  * standard, or a non-empty error otherwise.
- * @param {string} timecode Timecode value in "HH:MM:SS:FF" format (without
- *     quotes). May use semicolons in drop frame standards.
+ * @param {string|number} timecode Timecode value in "HH:MM:SS:FF" format (without
+ *     quotes), or an integer number (e.g. 4332211 will be interpreted as 04:33:22:11).
+ *     May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
  * @param {string} dropType "drop" or "non-drop".
@@ -283,8 +312,9 @@ function TC_ERROR(timecode, frameRate, dropType) {
  * 
  * If this is a drop frame standard, dropped frames are not given indexes
  * (so in 29.97 drop, 00:00:59:29 has index 1799 and 00:01:00:02 has index 1800).
- * @param {string} timecode Timecode value in "HH:MM:SS:FF" format (without
- *     quotes). May use semicolons in drop frame standards.
+ * @param {string|number} timecode Timecode value in "HH:MM:SS:FF" format (without
+ *     quotes), or an integer number (e.g. 4332211 will be interpreted as 04:33:22:11).
+ *     May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
  * @param {string} dropType "drop" or "non-drop".
@@ -357,8 +387,9 @@ function frameIdxToWallSecs_(frameIdx, tcStd) {
 /**
  * Converts input timecode to wall time in seconds offset from origin
  * time 00:00:00:00.
- * @param {string} timecode Timecode value in "HH:MM:SS:FF" format (without
- *     quotes). May use semicolons in drop frame standards.
+ * @param {string|number} timecode Timecode value in "HH:MM:SS:FF" format (without
+ *     quotes), or an integer number (e.g. 4332211 will be interpreted as 04:33:22:11).
+ *     May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
  * @param {string} dropType "drop" or "non-drop".
@@ -377,10 +408,12 @@ function TC_TO_WALL_SECS(timecode, frameRate, dropType) {
 /**
  * Returns wall time in seconds between the given start and end timecodes. If end
  * is before start, the returned value will be negative.
- * @param {string} start Start timecode value in "HH:MM:SS:FF" format (without
- *     quotes). May use semicolons in drop frame standards.
- * @param {string} end End timecode value in "HH:MM:SS:FF" format (without
- *     quotes). May use semicolons in drop frame standards.
+ * @param {string|number} start Start timecode value in "HH:MM:SS:FF" format (without
+ *     quotes), or an integer number (e.g. 4332211 will be interpreted as 04:33:22:11).
+ *     May use semicolons in drop frame standards.
+ * @param {string|number} end End timecode value in "HH:MM:SS:FF" format (without
+ *     quotes), or an integer number (e.g. 4332211 will be interpreted as 04:33:22:11).
+ *     May use semicolons in drop frame standards.
  * @param {string} frameRate Frame rate as a plain text string, with exactly 2 or 3
  *     decimal digits of precision after the period (e.g. "23.976" or "24.00").
  * @param {string} dropType "drop" or "non-drop".
@@ -586,21 +619,30 @@ function frameIdxToTc_(frameIdx, tcStd) {
   // If this is a drop frame standard, adjust for any dropped frames.
   let framesRemaining = frameIdx + framesDroppedBeforeFrameIdx_(frameIdx, tcStd);
 
-  const h = Math.floor(framesRemaining / framesPerHr);
-  framesRemaining -= h * framesPerHr;
+  const hh = Math.floor(framesRemaining / framesPerHr);
+  framesRemaining -= hh * framesPerHr;
 
-  const m = Math.floor(framesRemaining / framesPerMin);
-  framesRemaining -= m * framesPerMin;
+  const mm = Math.floor(framesRemaining / framesPerMin);
+  framesRemaining -= mm * framesPerMin;
 
-  const s = Math.floor(framesRemaining / tcStd.intFps);
-  framesRemaining -= s * tcStd.intFps;
+  const ss = Math.floor(framesRemaining / tcStd.intFps);
+  framesRemaining -= ss * tcStd.intFps;
 
-  const f = framesRemaining;
+  const ff = framesRemaining;
 
-  const hh = String(h).padStart(2, '0');
-  const mm = String(m).padStart(2, '0');
-  const ss = String(s).padStart(2, '0');
-  const ff = String(f).padStart(2, '0');
+  return tcToStr_({hh: hh, mm: mm, ss: ss, ff: ff});
+}
+
+/**
+ * @param {ParsedTimecode} tc
+ * @return {string}
+ * @private
+ */
+function tcToStr_(tc) {
+  const hh = String(tc.hh).padStart(2, '0');
+  const mm = String(tc.mm).padStart(2, '0');
+  const ss = String(tc.ss).padStart(2, '0');
+  const ff = String(tc.ff).padStart(2, '0');
 
   // TODO: Optionally support ';' separator for drop frame standards, if this
   // feature is sufficiently requested.

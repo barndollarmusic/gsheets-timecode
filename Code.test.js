@@ -33,8 +33,20 @@ describe('TC_ERROR', () => {
   });
 
   it('rejects invalid format timecode', () => {
-    expect(Code.TC_ERROR(11223344, '60.00', 'non-drop'))
-        .toContain('timecode must be a single plain text value');
+    expect(Code.TC_ERROR(Number.NEGATIVE_INFINITY, '24.00', 'non-drop'))
+        .toContain('numerical timecode must be an integer in [0, 99999999] range');
+    expect(Code.TC_ERROR(Number.NaN, '24.00', 'non-drop'))
+        .toContain('numerical timecode must be an integer in [0, 99999999] range');
+    expect(Code.TC_ERROR(Number.POSITIVE_INFINITY, '24.00', 'non-drop'))
+        .toContain('numerical timecode must be an integer in [0, 99999999] range');
+
+    expect(Code.TC_ERROR(34.56, '24.00', 'non-drop'))
+        .toContain('numerical timecode must be an integer in [0, 99999999] range');
+
+    expect(Code.TC_ERROR(-1, '24.00', 'non-drop'))
+        .toContain('numerical timecode must be an integer in [0, 99999999] range');
+    expect(Code.TC_ERROR(100000000, '24.00', 'non-drop'))
+        .toContain('numerical timecode must be an integer in [0, 99999999] range');
 
     expect(Code.TC_ERROR('01020304', '24.00', 'non-drop'))
         .toContain('timecode must be in HH:MM:SS:FF format: "01020304"');
@@ -76,7 +88,7 @@ describe('TC_ERROR', () => {
         .toContain('timecode invalid: "07:33:00:03" is a dropped frame number');
   });
 
-  it('accepts valid format timecode', () => {
+  it('accepts valid format timecode (string format)', () => {
     expect(Code.TC_ERROR('  11:22:33:44  ', '60.000', 'non-drop')).toBe('');
 
     expect(Code.TC_ERROR('00:00:00:23', '23.976', 'non-drop')).toBe('');
@@ -87,12 +99,22 @@ describe('TC_ERROR', () => {
     expect(Code.TC_ERROR('00:00:00;00', '29.97', 'drop')).toBe('');
     expect(Code.TC_ERROR('01;02;03;04', '59.940', 'drop')).toBe('');
   });
+
+  it('accepts valid format timecode (number format)', () => {
+    expect(Code.TC_ERROR(11223344, '60.00', 'non-drop')).toBe('');
+
+    expect(Code.TC_ERROR(23, '23.976', 'non-drop')).toBe('');
+    expect(Code.TC_ERROR(1020329, '29.97', 'drop')).toBe('');
+    expect(Code.TC_ERROR(10002, '29.970', 'drop')).toBe('');
+    expect(Code.TC_ERROR(7330003, '29.97', 'drop')).toBe('');
+
+    expect(Code.TC_ERROR(0, '29.97', 'drop')).toBe('');
+    expect(Code.TC_ERROR(1020304, '59.940', 'drop')).toBe('');
+  });
 });
 
 describe('TC_TO_FRAMEIDX', () => {
   it('rejects invalid timecode values and timecode standards', () => {
-    expect(() => Code.TC_TO_FRAMEIDX(11223344, '60.000', 'non-drop'))
-        .toThrow(/timecode must be a single plain text value/);
     expect(() => Code.TC_TO_FRAMEIDX('1:2:3:4', '24.00', 'non-drop'))
         .toThrow(/timecode must be in HH:MM:SS:FF format: "1:2:3:4"/);
     expect(() => Code.TC_TO_FRAMEIDX('00:00:00:30', '29.97', 'drop'))
@@ -106,7 +128,7 @@ describe('TC_TO_FRAMEIDX', () => {
         .toThrow(/dropType value must be "non-drop" or "drop"/);
   });
 
-  it('converts non-drop frames correctly', () => {
+  it('converts non-drop frames correctly (string format)', () => {
     expect(Code.TC_TO_FRAMEIDX('00:00:00:00', '24.00', 'non-drop')).toBe(0);
     expect(Code.TC_TO_FRAMEIDX('00:00:00:01', '29.97', 'non-drop')).toBe(1);
     expect(Code.TC_TO_FRAMEIDX('00:00:00:02', '50.000', 'non-drop')).toBe(2);
@@ -143,7 +165,44 @@ describe('TC_TO_FRAMEIDX', () => {
     expect(Code.TC_TO_FRAMEIDX('44:33:22:11', '60.00', 'non-drop')).toBe(9624131);
   });
 
-  it('converts drop frames correctly', () => {
+  it('converts non-drop frames correctly (number format)', () => {
+    expect(Code.TC_TO_FRAMEIDX(0, '24.00', 'non-drop')).toBe(0);
+    expect(Code.TC_TO_FRAMEIDX(1, '29.97', 'non-drop')).toBe(1);
+    expect(Code.TC_TO_FRAMEIDX(2, '50.000', 'non-drop')).toBe(2);
+
+    expect(Code.TC_TO_FRAMEIDX(100, '24.00', 'non-drop')).toBe(24);
+    expect(Code.TC_TO_FRAMEIDX(101, '29.97', 'non-drop')).toBe(31);
+    expect(Code.TC_TO_FRAMEIDX(102, '50.000', 'non-drop')).toBe(52);
+
+    // 160,402 timecode seconds plus 11 frames:
+    expect(Code.TC_TO_FRAMEIDX(44332211, '23.976', 'non-drop')).toBe(3849659);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '23.98', 'non-drop')).toBe(3849659);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '24.000', 'non-drop')).toBe(3849659);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '24.00', 'non-drop')).toBe(3849659);
+
+    expect(Code.TC_TO_FRAMEIDX(44332211, '25.000', 'non-drop')).toBe(4010061);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '25.00', 'non-drop')).toBe(4010061);
+
+    expect(Code.TC_TO_FRAMEIDX(44332211, '29.970', 'non-drop')).toBe(4812071);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '29.97', 'non-drop')).toBe(4812071);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '30.000', 'non-drop')).toBe(4812071);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '30.00', 'non-drop')).toBe(4812071);
+
+    expect(Code.TC_TO_FRAMEIDX(44332211, '47.952', 'non-drop')).toBe(7699307);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '47.95', 'non-drop')).toBe(7699307);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '48.000', 'non-drop')).toBe(7699307);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '48.00', 'non-drop')).toBe(7699307);
+
+    expect(Code.TC_TO_FRAMEIDX(44332211, '50.000', 'non-drop')).toBe(8020111);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '50.00', 'non-drop')).toBe(8020111);
+
+    expect(Code.TC_TO_FRAMEIDX(44332211, '59.940', 'non-drop')).toBe(9624131);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '59.94', 'non-drop')).toBe(9624131);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '60.000', 'non-drop')).toBe(9624131);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '60.00', 'non-drop')).toBe(9624131);
+  });
+
+  it('converts drop frames correctly (string format)', () => {
     expect(Code.TC_TO_FRAMEIDX('00:00:59:29', '29.97', 'drop')).toBe(1799);
     expect(Code.TC_TO_FRAMEIDX('00:01:00;02', '29.97', 'drop')).toBe(1800);
 
@@ -160,6 +219,25 @@ describe('TC_TO_FRAMEIDX', () => {
     //             total 9,602,388 + 12,131 - 12 = 9,614,507.
     expect(Code.TC_TO_FRAMEIDX('44:33:22:11', '59.940', 'drop')).toBe(9614507);
     expect(Code.TC_TO_FRAMEIDX('44;33;22;11', '59.94', 'drop')).toBe(9614507);
+  });
+
+  it('converts drop frames correctly (number format)', () => {
+    expect(Code.TC_TO_FRAMEIDX(5929, '29.97', 'drop')).toBe(1799);
+    expect(Code.TC_TO_FRAMEIDX(10002, '29.97', 'drop')).toBe(1800);
+
+    // 6*44 + 3 = 267 blocks of 10 minutes, plus 00:03:22:11:
+
+    // 29.97 drop: 17,982 frames per 10 minutes (267 * 17,982 = 4,801,194),
+    //             plus 00:03:22:11 (202s*30/s + 11 = 6,071 frames; minus 3m * 2/m = 6 dropped),
+    //             total 4,801,194 + 6,071 - 6 = 4,807,259.
+    expect(Code.TC_TO_FRAMEIDX(44332211, '29.970', 'drop')).toBe(4807259);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '29.97', 'drop')).toBe(4807259);
+
+    // 59.94 drop: 35,964 frames per 10 minutes (267 * 35,964 = 9,602,388),
+    //             plus 00:03:22:11 (202s*60/s + 11 = 12,131 frames; minus 3m * 4/m = 12 dropped),
+    //             total 9,602,388 + 12,131 - 12 = 9,614,507.
+    expect(Code.TC_TO_FRAMEIDX(44332211, '59.940', 'drop')).toBe(9614507);
+    expect(Code.TC_TO_FRAMEIDX(44332211, '59.94', 'drop')).toBe(9614507);
   });
 });
 
@@ -249,8 +327,6 @@ describe('FRAMEIDX_TO_WALL_SECS', () => {
 
 describe('TC_TO_WALL_SECS', () => {
   it('rejects invalid timecode values and timecode standards', () => {
-    expect(() => Code.TC_TO_WALL_SECS(11223344, '60.000', 'non-drop'))
-        .toThrow(/timecode must be a single plain text value/);
     expect(() => Code.TC_TO_WALL_SECS('1:2:3:4', '24.00', 'non-drop'))
         .toThrow(/timecode must be in HH:MM:SS:FF format: "1:2:3:4"/);
     expect(() => Code.TC_TO_WALL_SECS('00:00:00:30', '29.97', 'drop'))
@@ -264,7 +340,7 @@ describe('TC_TO_WALL_SECS', () => {
         .toThrow(/dropType value must be "non-drop" or "drop"/);
   });
 
-  it('converts to wall seconds correctly', () => {
+  it('converts to wall seconds correctly (string format)', () => {
     expect(Code.TC_TO_WALL_SECS('00:00:01:02', '50.00', 'non-drop'))
         .toBeCloseTo(1.04, PRECISION_8DIGITS);
 
@@ -335,12 +411,82 @@ describe('TC_TO_WALL_SECS', () => {
     expect(Code.TC_TO_WALL_SECS('44:33:22:11', '59.94', 'drop'))
         .toBeCloseTo(160402.02511667, PRECISION_8DIGITS);
   });
+
+  it('converts to wall seconds correctly (number format)', () => {
+    expect(Code.TC_TO_WALL_SECS(102, '50.00', 'non-drop'))
+        .toBeCloseTo(1.04, PRECISION_8DIGITS);
+
+    expect(Code.TC_TO_WALL_SECS(5929, '29.97', 'drop'))
+        .toBeCloseTo(60.02663333, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(10002, '29.97', 'drop'))
+        .toBeCloseTo(60.06, PRECISION_8DIGITS);
+
+    // 44:33:22:11 => 160,402 timecode seconds plus 11 frames:
+
+    expect(Code.TC_TO_WALL_SECS(44332211, '23.976', 'non-drop'))
+        .toBeCloseTo(160562.86079167, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '23.98', 'non-drop'))
+        .toBeCloseTo(160562.86079167, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '24.000', 'non-drop'))
+        .toBeCloseTo(160402.45833333, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '24.00', 'non-drop'))
+        .toBeCloseTo(160402.45833333, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '25.000', 'non-drop'))
+        .toBeCloseTo(160402.44, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '25.00', 'non-drop'))
+        .toBeCloseTo(160402.44, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '29.970', 'non-drop'))
+        .toBeCloseTo(160562.76903333, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '29.97', 'non-drop'))
+        .toBeCloseTo(160562.76903333, PRECISION_8DIGITS);
+
+    expect(Code.TC_TO_WALL_SECS(44332211, '30.000', 'non-drop'))
+        .toBeCloseTo(160402.36666667, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '30.00', 'non-drop'))
+        .toBeCloseTo(160402.36666667, PRECISION_8DIGITS);
+
+    expect(Code.TC_TO_WALL_SECS(44332211, '47.952', 'non-drop'))
+        .toBeCloseTo(160562.63139583, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '47.95', 'non-drop'))
+        .toBeCloseTo(160562.63139583, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '48.000', 'non-drop'))
+        .toBeCloseTo(160402.22916667, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '48.00', 'non-drop'))
+        .toBeCloseTo(160402.22916667, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '50.000', 'non-drop'))
+        .toBeCloseTo(160402.22, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '50.00', 'non-drop'))
+        .toBeCloseTo(160402.22, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '59.940', 'non-drop'))
+        .toBeCloseTo(160562.58551667, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '59.94', 'non-drop'))
+        .toBeCloseTo(160562.58551667, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '60.000', 'non-drop'))
+        .toBeCloseTo(160402.18333333, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '60.00', 'non-drop'))
+        .toBeCloseTo(160402.18333333, PRECISION_8DIGITS);
+    
+    expect(Code.TC_TO_WALL_SECS(44332211, '29.970', 'drop'))
+        .toBeCloseTo(160402.20863333, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '29.97', 'drop'))
+        .toBeCloseTo(160402.20863333, PRECISION_8DIGITS);
+
+    expect(Code.TC_TO_WALL_SECS(44332211, '59.940', 'drop'))
+        .toBeCloseTo(160402.02511667, PRECISION_8DIGITS);
+    expect(Code.TC_TO_WALL_SECS(44332211, '59.94', 'drop'))
+        .toBeCloseTo(160402.02511667, PRECISION_8DIGITS);
+  });
 });
 
 describe('WALL_SECS_BETWEEN_TCS', () => {
   it('rejects invalid timecode values and timecode standards', () => {
-    expect(() => Code.WALL_SECS_BETWEEN_TCS(11223344, '44:33:22:11', '60.000', 'non-drop'))
-        .toThrow(/timecode must be a single plain text value/);
     expect(() => Code.WALL_SECS_BETWEEN_TCS('44:33:22:11', '1:2:3:4', '24.00', 'non-drop'))
         .toThrow(/timecode must be in HH:MM:SS:FF format: "1:2:3:4"/);
     expect(() => Code.WALL_SECS_BETWEEN_TCS('00:00:00:30', '44:33:22:11', '29.97', 'drop'))
@@ -354,7 +500,7 @@ describe('WALL_SECS_BETWEEN_TCS', () => {
         .toThrow(/dropType value must be "non-drop" or "drop"/);
   });
 
-  it('computes correct positive duration when start is <= end', () => {
+  it('computes correct positive duration when start is <= end (string format)', () => {
     expect(Code.WALL_SECS_BETWEEN_TCS('00:00:00:00', '00:00:00:00', '23.976', 'non-drop'))
         .toBeCloseTo(0.0, PRECISION_8DIGITS);
     expect(Code.WALL_SECS_BETWEEN_TCS('44:33:22:11', '44:33:22:11', '23.976', 'non-drop'))
@@ -375,13 +521,44 @@ describe('WALL_SECS_BETWEEN_TCS', () => {
         .toBeCloseTo(359999.98333333, PRECISION_8DIGITS);
   });
 
-  it('computes correct negative duration when start is > end', () => {
+  it('computes correct positive duration when start is <= end (number format)', () => {
+    expect(Code.WALL_SECS_BETWEEN_TCS(0, 0, '23.976', 'non-drop'))
+        .toBeCloseTo(0.0, PRECISION_8DIGITS);
+    expect(Code.WALL_SECS_BETWEEN_TCS(44332211, 44332211, '23.976', 'non-drop'))
+        .toBeCloseTo(0.0, PRECISION_8DIGITS);
+    
+    expect(Code.WALL_SECS_BETWEEN_TCS(44332211, 44332311, '23.976', 'non-drop'))
+        .toBeCloseTo(1.001, PRECISION_8DIGITS);
+
+    expect(Code.WALL_SECS_BETWEEN_TCS(103, 20511, '24.000', 'non-drop'))
+        .toBeCloseTo(124.33333333, PRECISION_8DIGITS);
+
+    // Times are 415,853 frames apart:
+    expect(Code.WALL_SECS_BETWEEN_TCS(44332211, 46290004, '59.940', 'drop'))
+        .toBeCloseTo(6937.81421667, PRECISION_8DIGITS);
+
+    // 1 frame less than 100 hours (360,000 seconds):
+    expect(Code.WALL_SECS_BETWEEN_TCS(0, 99595959, '60.000', 'non-drop'))
+        .toBeCloseTo(359999.98333333, PRECISION_8DIGITS);
+  });
+
+  it('computes correct negative duration when start is > end (string format)', () => {
     // Times are 415,853 frames apart:
     expect(Code.WALL_SECS_BETWEEN_TCS('46:29:00:04', '44:33:22:11', '59.940', 'drop'))
         .toBeCloseTo(-6937.81421667, PRECISION_8DIGITS);
 
     // 1 frame less than 100 hours (360,000 seconds):
     expect(Code.WALL_SECS_BETWEEN_TCS('99:59:59:59', '00:00:00:00', '60.000', 'non-drop'))
+        .toBeCloseTo(-359999.98333333, PRECISION_8DIGITS);
+  });
+
+  it('computes correct negative duration when start is > end (number format)', () => {
+    // Times are 415,853 frames apart:
+    expect(Code.WALL_SECS_BETWEEN_TCS(46290004, 44332211, '59.940', 'drop'))
+        .toBeCloseTo(-6937.81421667, PRECISION_8DIGITS);
+
+    // 1 frame less than 100 hours (360,000 seconds):
+    expect(Code.WALL_SECS_BETWEEN_TCS(99595959, 0, '60.000', 'non-drop'))
         .toBeCloseTo(-359999.98333333, PRECISION_8DIGITS);
   });
 });

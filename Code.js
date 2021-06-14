@@ -477,9 +477,9 @@ function WALL_SECS_TO_DURSTR(wallSecs) {
     output += 'h ';
   }
 
-  // Output mm only if non-zero. Zero pad if needed for 2 digits.
+  // Output mm only if non-zero. Zero pad if needed if there are hours.
   if ((hh > 0) || (mm > 0)) {
-    output += String(mm).padStart(2, '0');
+    output += (hh > 0) ? String(mm).padStart(2, '0') : mm;
     output += 'm ';
   }
 

@@ -584,9 +584,9 @@ describe('WALL_SECS_TO_DURSTR', () => {
     expect(Code.WALL_SECS_TO_DURSTR(1.0)).toBe('01s');
     expect(Code.WALL_SECS_TO_DURSTR(1.5)).toBe('02s');
     expect(Code.WALL_SECS_TO_DURSTR(59.49999999)).toBe('59s');
-    expect(Code.WALL_SECS_TO_DURSTR(59.5)).toBe('01m 00s');
-    expect(Code.WALL_SECS_TO_DURSTR(60.0)).toBe('01m 00s');
-    expect(Code.WALL_SECS_TO_DURSTR(60.49999999)).toBe('01m 00s');
+    expect(Code.WALL_SECS_TO_DURSTR(59.5)).toBe('1m 00s');
+    expect(Code.WALL_SECS_TO_DURSTR(60.0)).toBe('1m 00s');
+    expect(Code.WALL_SECS_TO_DURSTR(60.49999999)).toBe('1m 00s');
 
     expect(Code.WALL_SECS_TO_DURSTR(3540)).toBe('59m 00s');
     expect(Code.WALL_SECS_TO_DURSTR(3599.49999999)).toBe('59m 59s');
@@ -606,9 +606,9 @@ describe('WALL_SECS_TO_DURSTR', () => {
     expect(Code.WALL_SECS_TO_DURSTR(-1.0)).toBe('(-) 01s');
     expect(Code.WALL_SECS_TO_DURSTR(-1.5)).toBe('(-) 02s');
     expect(Code.WALL_SECS_TO_DURSTR(-59.49999999)).toBe('(-) 59s');
-    expect(Code.WALL_SECS_TO_DURSTR(-59.5)).toBe('(-) 01m 00s');
-    expect(Code.WALL_SECS_TO_DURSTR(-60.0)).toBe('(-) 01m 00s');
-    expect(Code.WALL_SECS_TO_DURSTR(-60.49999999)).toBe('(-) 01m 00s');
+    expect(Code.WALL_SECS_TO_DURSTR(-59.5)).toBe('(-) 1m 00s');
+    expect(Code.WALL_SECS_TO_DURSTR(-60.0)).toBe('(-) 1m 00s');
+    expect(Code.WALL_SECS_TO_DURSTR(-60.49999999)).toBe('(-) 1m 00s');
 
     expect(Code.WALL_SECS_TO_DURSTR(-3540)).toBe('(-) 59m 00s');
     expect(Code.WALL_SECS_TO_DURSTR(-3599.49999999)).toBe('(-) 59m 59s');

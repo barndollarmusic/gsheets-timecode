@@ -16,9 +16,8 @@ This is open source software that is free to use and share, as covered by the
 [MIT License](LICENSE).
 
 # Use in your own spreadsheets
-The easiest way to use these functions is by making a copy of one of these spreadsheet templates:
+The easiest way to use these functions is by making a copy of this example spreadsheet template:
 - [Music Log Template](https://docs.google.com/spreadsheets/d/1xPi0lxi4-4NmZmNoTXXoCNa0FGIAhwi2QCPjTABJCw4/edit?usp=sharing)
-- [Spotting Template](https://docs.google.com/spreadsheets/d/1vjyIRmCunJkk0hvxYrV4dGMzmrSzqrxKTXXlTGaMYaY/edit?usp=sharing)
 
 Or if you want to start from your own existing spreadsheet, go to **Tools > Script editor** and
 paste [this code](Code.js) into `Code.gs`.

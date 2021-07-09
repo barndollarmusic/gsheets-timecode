@@ -39,6 +39,10 @@ non-drop,drop
 ```
 
 ## Most common functions
+All the examples below show timecode values as *Plain text* (quoted string), but you can instead use an
+integer *Number* format input (which can be more convenient to type in, along with a custom number format
+of `00\:00\:00\:00`).
+
 ```JavaScript
 =TC_TO_WALL_SECS("00:00:01:02", "50.00", "non-drop")
 ```

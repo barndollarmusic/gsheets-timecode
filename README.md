@@ -23,6 +23,9 @@ Or if you want to start from your own existing spreadsheet, go to **Tools > Scri
 paste [this code](Code.js) into `Code.gs`.
 
 # Using custom functions
+Here's a spreadsheet that will walk you through how to use all of these functions:
+- [Tutorial: gsheets-timecode](https://docs.google.com/spreadsheets/d/1QephM04_TBnmzdKqT3WXLeGo0JNX1N1SlD3_BdpfY0E/edit?usp=sharing)
+
 The last 2 arguments to every function below are `frameRate` and `dropType` values.
 
 Data validation list of supported `frameRate` values (see template above for example usage):

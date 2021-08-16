@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/barndollarmusic/gsheets-timecode#readme",
   "devDependencies": {
-    "@google/clasp": "^2.4.0",
+    "@google/clasp": "^2.4.1",
     "jest": "^27.0.6"
   }
 }
